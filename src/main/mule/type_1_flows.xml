@@ -82,7 +82,6 @@ var val = p(vars.fileDescriptor.info.id ++ '.groupByColumn')
 		<choice doc:name="Run Process?" doc:id="dea12605-1e5c-425d-9636-5772055f5351">
 			<when expression="#[vars.runProcess]">
 				<set-variable value="#[vars.fileNameQualifier ++ ( vars.key replace &quot;\&quot;&quot; with &quot;&quot; )++ vars.initTimeStamp ++ '.txt' ]" doc:name="fileName" doc:id="5e5a290c-fc2e-49c1-a1b1-675f5c471856" variableName="fileName" />
-				<set-variable value="#[vars.failedList dw::core::Objects::mergeWith {(vars.fileName): payload.value}]" doc:name="BORRAR" doc:id="51c53d13-df68-47e6-a6f7-732e6837ae4a" variableName="failedList" />
 				<ee:transform doc:name="To ArrayList of String"
 					doc:id="ede6098b-b783-40e1-9f64-d910fbbf774d">
 					<ee:message>
@@ -107,7 +106,7 @@ output application/java
 				logException="true" doc:name="On Error Continue" doc:id="27af5b4a-2c8c-4bad-8966-5115fcf12c62">
 				<flow-ref doc:name="log_flow_error" doc:id="ccb461cd-ddaa-42a8-abcd-b7bbc50e971a"
 					name="log_flow_error" />
-				<set-variable value='#[vars.failedList dw::core::Objects::mergeWith {(vars.fileName): payload}]' doc:name="failedList" doc:id="94aeceb5-a99b-4374-808f-e8a88b408ce1" variableName="failedList"/>
+				<set-variable value='#[vars.failedList dw::core::Objects::mergeWith {(splitBy(vars.fileName, ".")[0] ++ ".zip"): payload.value}]' doc:name="failedList" doc:id="94aeceb5-a99b-4374-808f-e8a88b408ce1" variableName="failedList"/>
 			</on-error-continue>
 		</error-handler>
 	</flow>
@@ -117,8 +116,7 @@ output application/java
 			message='{"application-name":"${application.name}","flow-name":"#[flow.name]","flow-id":"#[vars.correlationId]","timestamp":"#[now() as String {format: "yyyyMMddHHmmss"}]","queryname":"DB.Select.From.SEC_TP_EDI"}'
 			category="${kibana.flow.log.category.db}" />
 		<db:select doc:name="DB.Select.From.SEC_TP_EDI" doc:id="1caec49c-606b-4553-924c-78cf46926f7a"
-			config-ref="middleware-config" target="trailingSeq" targetValue="#[payload[0].NUM]">
-			<reconnect-forever />
+			config-ref="middleware-config" target="trailingSeq" targetValue="#[payload[0].NUM]" queryTimeout="30">
 			<db:sql>SELECT SEC_TP_EDI.NEXTVAL AS num FROM DUAL</db:sql>
 		</db:select>
 		<logger level="INFO" doc:name="log-batch-db-post"
