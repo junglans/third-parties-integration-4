@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="CSV" format="csv">
+      <types:shape format="weave" example="examples/A_TP07.TXT"><![CDATA[type CSV = Array<{|
+  COD_TPV?: String, 
+  NUM_SES?: String, 
+  NUM_TIK?: String, 
+  NUM_OPE?: String, 
+  TIP_OPE?: String, 
+  MOM_OPE?: String, 
+  NUM_LIN?: String, 
+  COD_CVE?: String, 
+  COD_ART?: String, 
+  REF_PRO?: String, 
+  COD_EAN?: String, 
+  COD_ESC?: String, 
+  COD_TAL?: String, 
+  COD_ES2?: String, 
+  COD_TA2?: String, 
+  DES_ART?: String, 
+  UNI_VEN?: String, 
+  PRE_LIN?: String, 
+  PRE_UNI?: String, 
+  PRE_USI?: String, 
+  IMP_DTT?: String, 
+  IMP_DTO?: String, 
+  IMP_DTG?: String, 
+  IMP_DCP?: String, 
+  COD_DTO?: String, 
+  COD_DTG?: String, 
+  TIP_DTO?: String, 
+  IMP_IVA?: String, 
+  BAS_IVA?: String, 
+  POR_IVA?: String, 
+  TIP_IVA?: String, 
+  IND_MEN?: String, 
+  COD_FAM?: String
+|}> {"MetadataFormat": "csv"}]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+        <types:property name="separator" value="|"/>
+      </types:properties>
+    </types:type>
+    <types:type name="Objects" format="java">
+      <types:shape format="java" element="java.util.ArrayList"/>
+    </types:type>
+    <types:type name="Object" format="java">
+      <types:shape format="java" element="java.util.LinkedHashMap"/>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#2b7b4fe6-7b65-4f12-bccf-1045c53992a1">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="CSV"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="Object"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#ede6098b-b783-40e1-9f64-d910fbbf774d">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="CSV"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

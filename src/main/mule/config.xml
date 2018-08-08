@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:netsuite="http://www.mulesoft.org/schema/mule/netsuite" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd 
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/netsuite http://www.mulesoft.org/schema/mule/netsuite/current/mule-netsuite.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="6118d612-1260-49ef-9022-7c156f04da85" file="third-parties-integration.properties" key="${vault.key}">
+	</secure-properties:config >
+	<configuration-properties doc:name="Configuration properties" doc:id="76fcd922-debb-4063-90c8-580548ecc6b9" file="third-parties-integration.properties" />
+	<global-property doc:name="Global Property" doc:id="0dffbce5-a7db-4db7-b48f-5e3778aa59da" name="vault.key" value="1234567890123456" />
+	<db:config name="middleware-config" doc:name="Database Config" doc:id="3c351348-2cc5-4e5f-9447-5f30e5f75c7e" >
+		<db:oracle-connection host="${SC.HOST}" port="${SC.PORT}" user="${secure::SC.USER}" password="${secure::SC.PASSWORD}" instance="${SC.INSTANCE}" />
+	</db:config>
+	<sftp:config name="SFTP_Destination" doc:name="SFTP Config" doc:id="b0dc37a0-5f0d-4b93-8a53-d44e1e5f6a92" >
+		<sftp:connection host="#[vars.fileDescriptor.info.destination.host]" port="#[vars.fileDescriptor.info.destination.port]" username="#[vars.fileDescriptor.info.destination.user]" password="#[vars.fileDescriptor.info.destination.pwd]"/>
+	</sftp:config>
+	<ftp:config name="FTP_Destination" doc:name="FTP Config" doc:id="363d9eeb-26e3-43e9-a79d-028a2552e465" >
+		<ftp:connection transferMode="ASCII" host="#[vars.fileDescriptor.info.destination.host]" port="#[vars.fileDescriptor.info.destination.port]" username="#[vars.fileDescriptor.info.destination.user]" password="#[vars.fileDescriptor.info.destination.pwd]" />
+	</ftp:config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="37bc9f36-babb-4a32-bbf2-fe426f786df8" >
+		<email:smtp-connection host="#[vars.emailInfo.emailHost]" port="#[vars.emailInfo.emailPort]" user="#[vars.emailInfo.emailUser]" password="#[vars.emailInfo.emailPwd]"  timeoutUnit="MINUTES" connectionTimeout="1" readTimeout="1" writeTimeout="1">
+			<reconnection >
+				<reconnect-forever />
+			</reconnection>
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>	</email:smtp-config>
+</mule>

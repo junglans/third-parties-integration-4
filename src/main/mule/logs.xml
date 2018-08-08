@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <sub-flow name="log_flow_start">
+        <set-variable variableName="correlationId" value="#[correlationId]" doc:name="correlationId"/>
+        <logger message='{"application-name":"${application.name}","flow-name":"#[flow.name]","flow-id":"#[vars.correlationId]","timestamp":"#[now() as String {format: "yyyyMMddHHmmss"}]"}' level="INFO" category="${kibana.flow.log.category.start}" doc:name="Logger"/>
+
+    </sub-flow>
+    <sub-flow name="log_flow_end">
+        <logger message='{"application-name":"${application.name}","flow-name":"#[flow.name]","flow-id":"#[vars.correlationId]","timestamp":"#[now() as String {format : "yyyyMMddHHmmss"}]","successfulRecords":"#[vars.successfulRecords]","failedRecords":"#[vars.failedRecords]"}' level="INFO" category="${kibana.flow.log.category.end}" doc:name="Logger"/>
+    </sub-flow>
+    <sub-flow name="log_flow_error">
+        <logger message='{"application-name":"${application.name}","flow-name":"#[flow.name]","flow-id":"#[vars.correlationId]","timestamp":"#[now() as String {format : "yyyyMMddHHmmss"}]","description":"#[java!es::mule::areas::tp::utils::JsonUtils::quoteJSONString(error.detailedDescription)]"}' level="ERROR" category="${kibana.flow.log.category.error}" doc:name="Logger"/>
+    </sub-flow>
+    <sub-flow name="log_flow_file_error">
+        <logger message='{"application-name": "${application.name}","flow-name": "#[flow.name]","flow-id":"#[vars.correlationId]","timestamp": "#[now() as String {format : "yyyyMMddHHmmss"}]","filename" : "#[vars.fileDescriptor.fileName]", "description": "#[java!es::mule::areas::tp::utils::JsonUtils::quoteJSONString(error.detailedDescription)]"}' level="ERROR" category="${kibana.flow.log.category.error}" doc:name="Logger"/>
+    </sub-flow>
+</mule>

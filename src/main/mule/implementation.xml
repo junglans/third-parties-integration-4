@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule  xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="795bed5d-4768-4032-b266-372ec5e49930" >
+		<sftp:connection host="${tp.sftp.host}" port="${tp.sftp.port}" username="${secure::tp.sftp.user}" password="${secure::tp.sftp.pwd}" >
+			<reconnection >
+				<reconnect-forever />
+			</reconnection>
+		</sftp:connection>
+	</sftp:config>
+	<flow name="implementationFlow" doc:id="8ed4feff-351a-4970-ad32-9d9ce76fbca8" >
+		<scheduler doc:name="Scheduler" doc:id="e965e2b4-7f42-4c52-86be-a8e8f3baab09" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="${tp.sftp.move.poll.frequency}"/>
+			</scheduling-strategy>
+		</scheduler>
+		<flow-ref doc:name="log_flow_start" doc:id="d3c95b51-71fa-41be-91c1-a81aa536e1a4" name="log_flow_start"/>
+		<flow-ref doc:name="getFileDescriptors_SubFlow" doc:id="d2c92660-cbca-4aad-a93e-5da33c17ffc7" name="getFileDescriptors_SubFlow"/>
+		<flow-ref doc:name="processFileDescriptors_SubFlow" doc:id="94f3abf2-5149-4821-8057-d064c1783208" name="processFileDescriptors_SubFlow"/>
+		<flow-ref doc:name="log_flow_end" doc:id="8360bae3-75fd-4d2e-b1c8-6f0faf8f886f" name="log_flow_end"/>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="18e69800-b6e3-43c1-9c28-38e739fa4988" type="ANY">
+				<flow-ref doc:name="log_flow_error" doc:id="345ca702-2f4f-4542-a6b9-acc8bd3050b4" name="log_flow_error"/>
+				<flow-ref doc:name="log_flow_end" doc:id="42b6f66f-6368-4c7d-becf-5ea398ed85d1" name="log_flow_end"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="getFileDescriptors_SubFlow" doc:id="eba1c28a-00fa-445f-b7a6-6ea42b7e2e27" >
+		<ee:transform doc:name="Get ThirdParties Info" doc:id="6b6c1a0a-2986-4b82-b0b1-54f958fcf0b0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+(p('tp.prefix.list') splitBy ";") map {
+	id: $,
+	name: p('$.name'),
+	path: p('$.sftp.origin.path'),
+	processPath: p('$.sftp.process.path'),
+	errorPath: p('$.sftp.error.path'),
+	flowType: p('$.flowType'),
+	regExp: p('$.sftp.regex'),
+	destination: {
+		'protocol': p('$.protocol'),
+		'host': p('$.host'),
+		'port': p('$.port'),
+		'user': p('secure::$.user'),
+		'pwd': p('secure::$.pwd'),
+		'destFolder': p('$.dest.folder')
+	}  
+} as Object {class:  "es.mule.areas.tp.sftp.ThirdPartyInfo"}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Load FileDescriptors" doc:id="7f477259-86ff-49ef-9f52-ef31ab69948a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+import java!es::mule::areas::tp::sftp::SftpDirectoryExplorer
+---
+SftpDirectoryExplorer::call("${tp.sftp.host}",${tp.sftp.port},"${secure::tp.sftp.user}","${secure::tp.sftp.pwd}",payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="processFileDescriptors_SubFlow" doc:id="d1ed16ca-3e40-4916-bb73-f30bbb2ae139" >
+		<ee:transform doc:name="Init Variables" doc:id="cd50dd21-8197-4b4e-8463-10a6152439fd" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="initTimeStamp" ><![CDATA[%dw 2.0
+output application/java
+---
+now() as String {format: "yyyyMMddHHmmss"}]]></ee:set-variable>
+				<ee:set-variable variableName="failedRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+0 as Number]]></ee:set-variable>
+				<ee:set-variable variableName="successfulRecords" ><![CDATA[%dw 2.0
+output application/java
+---
+0 as Number]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<foreach doc:name="For Each FileDescriptor" doc:id="344f7639-0960-4f91-8892-c8844a8303c5" collection="#[message.payload]">
+			<set-variable value="#[payload]" doc:name="fileDescriptor" doc:id="f0b53fec-7f66-4ad3-bb9b-19331564ecc1" variableName="fileDescriptor"/>
+			<flow-ref doc:name="processFile_Flow" doc:id="039d7572-3dd1-4046-8191-5f7bd9f12335" name="processFile_Flow"/>
+		</foreach>
+	</sub-flow>
+	<flow name="processFile_Flow" doc:id="56ac45cc-dff7-49bb-8783-a01840c8131a" >
+		<sftp:move doc:name="Move File to Processing" doc:id="0f612652-bc12-4f69-9d00-3d8a9f85d184" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/" ++ vars.fileDescriptor.fileName]' targetPath='#[vars.fileDescriptor.info.path ++ "/Processing/"]' overwrite="true"/>
+		<sftp:read doc:name="Get File" doc:id="ebe142e9-de42-4faf-aa8a-8643411c1f42" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' outputEncoding="UTF-8" outputMimeType="application/csv; ignoreemptyline=true; headerlinenumber=0; streaming=true; separator=|; header=true"/>
+		<flow-ref doc:name="moveFile_Sub_Flow" doc:id="5fa3e3f1-1be2-415c-b9c2-8990005be4d2" name="moveFile_Sub_Flow"/>
+		<set-variable value="#[vars.successfulRecords + 1]" doc:name="successfulRecords++" doc:id="a3eda917-f1d5-4d37-b844-a21bfb2a131f" variableName="successfulRecords"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="f3c543c7-308c-409f-a52d-ed64d5252e1d" type="ANY">
+				<set-variable value="#[vars.failedRecords +1]" doc:name="failedRecords++" doc:id="6e3b7981-306e-44f0-9d8b-92b0a3d9d1ca" variableName="failedRecords"/>
+				<flow-ref doc:name="log_flow_file_error" doc:id="00ddd143-e1ce-4f54-be31-5d9a4b815f4a" name="log_flow_file_error"/>
+				<flow-ref doc:name="copyFileToERROR_SubFlow" doc:id="b8d9bcf3-58d1-4f3b-a00d-351bab0b2447" name="copyFileToERROR_SubFlow"/>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<sub-flow name="moveFile_Sub_Flow" doc:id="271e7d98-664b-4406-938e-50a127adde31" >
+		<flow-ref doc:name='#["moveFile_" ++ vars.fileDescriptor.info.flowType]' doc:id="54ec0b5c-c35e-49bc-8f58-96af19607df9" name='#["moveFile_" ++ vars.fileDescriptor.info.flowType]'/>
+	</sub-flow>
+	<sub-flow name="copyFileToERROR_SubFlow" doc:id="100f203c-6b18-4611-980a-efd006cedc7e" >
+		<flow-ref doc:name='#["copyFileToERROR_SubFlow_" ++ vars.fileDescriptor.info.flowType]' doc:id="8c4844a1-cb06-431c-92e2-c535b7b68a38" name='#["copyFileToERROR_SubFlow_" ++ vars.fileDescriptor.info.flowType]'/>
+	</sub-flow>
+</mule>

@@ -1,0 +1,28 @@
+{
+  "configs": [
+    "implementation.xml",
+    "type_0_flows.xml",
+    "config.xml",
+    "type_1_flows.xml",
+    "logs.xml"
+  ],
+  "secureProperties": [],
+  "redeploymentEnabled": true,
+  "name": "third-parties-integration",
+  "minMuleVersion": "4.1.1",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [
+        "es.mule.areas.tp.sftp",
+        "es.mule.areas.tp.utils"
+      ],
+      "exportedResources": []
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}

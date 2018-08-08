@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:compression="http://www.mulesoft.org/schema/mule/compression" xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:ftps="http://www.mulesoft.org/schema/mule/ftps"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:java="http://www.mulesoft.org/schema/mule/java" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ftps http://www.mulesoft.org/schema/mule/ftps/current/mule-ftps.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd">
+	<flow name="moveFile_T1" doc:id="e8c782d8-eb18-4eb0-9774-ee7eace53afc" >
+		<set-variable value="#[true]" doc:name="runProcess" doc:id="b27267ac-0d67-44d8-904e-f8a08a99c2cf" variableName="runProcess" doc:description='This variable when "true" allows the processing of the file to continue, but if "false" then stops the processing.'/>
+		<set-variable value="#[java!java::util::HashMap::new(100,0.8)]" doc:name="failedList" doc:id="a878fd6f-0ccb-499c-8eb2-ce99af6d91f4" variableName="failedList"/>
+		<set-variable value='#[p(vars.fileDescriptor.info.id ++ ".fileNameQualifier")]' doc:name="fileNameQualifier" doc:id="2f3e6005-d01e-44cc-b11a-988a247400d7" variableName="fileNameQualifier"/>
+		<sftp:read doc:name="Get File from Processing" doc:id="11c26c8e-df00-45ba-889b-09b12d099a5d" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' outputMimeType="application/csv; ignoreemptyline=true; headerlinenumber=0; streaming=true; separator=|; header=true" outputEncoding="UTF-8" />
+		<ee:transform doc:name="Group By Column Value" doc:id="2b7b4fe6-7b65-4f12-bccf-1045c53992a1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var val = p(vars.fileDescriptor.info.id ++ '.groupByColumn')
+---
+(payload groupBy $[val])  pluck ($)  map {
+	($[0][val]): $
+}  reduce ($$ ++ $)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each Column Value" doc:id="1944dfe7-60a9-436e-9dfd-2642ccbf63c7" collection="#[dw::core::Objects::entrySet(payload)]">
+			<choice doc:name="Run process?" doc:id="2af1b071-5c4e-46a8-ac7c-c254959ebb55" >
+				<when expression="#[vars.runProcess]" >
+					<flow-ref doc:name="writeValueFile" doc:id="9bff4936-f18d-4959-a9c2-8b0aac5fbc4d" name="writeValueFile"/>
+				</when>
+				<otherwise >
+					<logger level="DEBUG" doc:name="Logger" doc:id="58f408c1-17f1-44fa-a032-306903c77885" message="NOOP" category="${tp.log.category}"/>
+				</otherwise>
+			</choice>
+		</foreach>
+		<choice doc:name="Run process?" doc:id="4c86e164-a292-46b6-99ef-3116f04bb83c" >
+			<when expression="#[vars.runProcess]" >
+				<choice doc:name="failedList is not empty?" doc:id="18c678e6-dc59-4da1-9067-3bbba05dbd36" >
+					<when expression="#[isEmpty(vars.failedList)]" >
+						<flow-ref doc:name="processFailedList_Sub_Flow" doc:id="db4cc467-a3e5-4a05-a424-726d1cc91e3d" name="processFailedList_Sub_Flow"/>
+					</when>
+					<otherwise >
+						<flow-ref doc:name="copyFileToProcessed_SubFlow_T1" doc:id="45323e25-cb75-4749-b3c9-735697993da3" name="copyFileToProcessed_SubFlow_T1"/>
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="copyFileToERROR_SubFlow_T1" doc:id="a4c37bc6-9a0d-4254-a2a1-2c47137bf63b" name="copyFileToERROR_SubFlow_T1"/>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="writeValueFile" doc:id="97f0b30f-9ae4-46a2-aacd-c70c8ef58a48" >
+		<set-variable value="#[payload.key.name]" doc:name="key" doc:id="4b62ef22-a233-45b1-ac79-69aa7914d82a" variableName="key" />
+		<flow-ref doc:name="DB_Get_Value_From_SEC_TP_EDI" doc:id="fc34ea85-ce1b-4abf-b72b-626b00a6c2f0" name="DB_Get_Value_From_SEC_TP_EDI"/>
+		<choice doc:name="Run Process?" doc:id="dea12605-1e5c-425d-9636-5772055f5351" >
+			<when expression="#[vars.runProcess]" >
+				<set-variable value="#[vars.fileNameQualifier ++ ( vars.key replace &quot;\&quot;&quot; with &quot;&quot; )++ vars.initTimeStamp ++ '.txt' ]" doc:name="fileName" doc:id="5e5a290c-fc2e-49c1-a1b1-675f5c471856" variableName="fileName"/>
+				<ee:transform doc:name="To ArrayList of String" doc:id="ede6098b-b783-40e1-9f64-d910fbbf774d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+import dw::core::Objects
+---
+payload.value map using (row = Objects::valueSet($)) (((row - sizeOf(row) -2) + vars.trailingSeq + row[sizeOf (row) -1]) joinBy "|")]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<foreach doc:name="For Each Line" doc:id="58ed2db1-cc9f-4e39-9953-73e4280bd823" collection='#[payload]'>
+					<set-payload value='#[payload ++ "\n"]' doc:name="Set Payload" doc:id="974a3d42-500f-4088-a926-f776893ee0e2" />
+					<sftp:write doc:name="Write" doc:id="abccf1b3-da12-4e1a-82d5-0344fdeb974e" config-ref="SFTP_Destination" path='#[vars.fileDescriptor.info.destination.destFolder  ++ "/" ++ vars.fileName]' mode="APPEND">
+					<reconnect-forever />
+				</sftp:write>
+				</foreach>
+			</when>
+			<otherwise >
+				<logger level="ERROR" doc:name="Logger" doc:id="f7111f0a-e06a-4aae-aa38-cf157cd0b84e" message="STOP PROCESSING FILE" category="${tp.log.category}"/>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="27af5b4a-2c8c-4bad-8966-5115fcf12c62" >
+				<flow-ref doc:name="log_flow_error" doc:id="ccb461cd-ddaa-42a8-abcd-b7bbc50e971a" name="log_flow_error"/>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="DB_Get_Value_From_SEC_TP_EDI" doc:id="d3aec18d-27c2-44eb-b5a6-ec876d24a437" >
+		<logger level="DEBUG" doc:name="log-batch-db-pre" doc:id="56c1be4c-2a36-4609-ad7a-647d0403632f" message='{"application-name":"${application.name}","flow-name":"#[flow.name]","flow-id":"#[vars.correlationId]","timestamp":"#[now() as String {format: "yyyyMMddHHmmss"}]","queryname":"DB.Select.From.SEC_TP_EDI"}' category="${kibana.flow.log.category.db}"/>
+		<db:select doc:name="DB.Select.From.SEC_TP_EDI" doc:id="1caec49c-606b-4553-924c-78cf46926f7a" config-ref="middleware-config" target="trailingSeq" targetValue="#[payload[0].NUM]">
+			<reconnect-forever />
+			<db:sql >SELECT SEC_TP_EDI.NEXTVAL AS num FROM DUAL</db:sql>
+		</db:select>
+		<logger level="INFO" doc:name="log-batch-db-post" doc:id="479282c5-1c87-4200-99ce-c0c60e6c6ce9" message='{"application-name":"${application.name}","flow-name":"#[flow.name]","flow-id":"#[vars.correlationId]","timestamp":"#[now() as String {format: "yyyyMMddHHmmss"}]","queryname":"DB.Select.From.SEC_TP_EDI", "response":"#[message.payload]"}'/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="0186439b-5af3-4c7b-95ae-dcc50e462493" >
+				<flow-ref doc:name="log_flow_error" doc:id="a79653b9-a2bb-4328-882c-282c9c90efde" name="log_flow_error"/>
+				<set-variable value="#[false]" doc:name="runProcess" doc:id="be432873-b7cd-4f43-bf38-0316cd04628c" variableName="runProcess"/>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<sub-flow name="copyFileToProcessed_SubFlow_T1" doc:id="37f8cca3-9113-4c2a-8613-f6289a4252fc" >
+		<sftp:move doc:name="Move to Processed" doc:id="826c4d06-804b-418a-b3ae-a87beea6a613" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.processPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]'/>
+	</sub-flow>
+	<sub-flow name="copyFileToERROR_SubFlow_T1" doc:id="45750d33-3bd7-45cb-ab66-5d1291a3e22a" >
+		<set-variable value='#[splitBy(vars.fileDescriptor.fileName, ".")[0] ++ ".zip"]' doc:name="zipFileName" doc:id="72bd9aeb-efc2-4e20-9a14-726a9fedb6d2" variableName="zipFileName"/>
+		<sftp:read doc:name="Read from Processing" doc:id="64556560-edf8-4775-8ac2-cdf3f6cbda4b" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]'/>
+		<compression:zip doc:name="Zip" doc:id="4f5ece26-4439-4b58-b882-8d8c12a28284" />
+		<ee:transform doc:name="add zipped file to failedList" doc:id="fa5145c1-3c63-47d1-a26e-634273a075dc" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="failedList" ><![CDATA[%dw 2.0
+output application/java
+var name = vars.failedList
+---
+vars.failedList dw::core::Objects::mergeWith {name: payload}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="send-mail-SubFlow" doc:id="e9f3f54a-dc58-4be9-bbdf-6c9971be1f1b" name="send-mail-SubFlow"/>
+		<sftp:move doc:name="Move to Error" doc:id="4fa4278a-fbe0-45a8-8345-d5707b084085" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.errorPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
+	</sub-flow>
+	<sub-flow name="processFailedList_Sub_Flow" doc:id="4bd43f0d-e0d6-4de9-b451-fe7550a08387" >
+		<logger level="INFO" doc:name="Logger" doc:id="9285934e-e8cb-4440-9486-ccb8fdf7f639" />
+	</sub-flow>
+	<flow name="send-mail-SubFlow" doc:id="c083cbed-b5df-4b95-a4fa-05a2a5afec32">
+		<ee:transform doc:name="Email Info" doc:id="1573a3af-f357-4893-85df-634113952dfe">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="emailInfo"><![CDATA[%dw 2.0
+output application/java
+var id = vars.fileDescriptor.info.id
+---
+{
+	'emailHost': p( id ++ ".email.host"),
+	'emailPort': p( id ++ ".email.port"),
+	'emailUser': p( "secure::" ++ id ++ ".email.user"),
+	'emailPwd': p( "secure::" ++ id ++ ".email.pwd"),
+	'emailTo': p( id ++ ".email.to"),
+	'emailFrom': p( id ++ ".email.from"),
+	'emailSubject': p( id ++ ".email.subject")
+	
+} as Object {class: "java.util.HashMap"}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<parse-template doc:name="eMail Body" doc:id="ca8e1266-cd77-448f-b7b9-e7ce82fd5957" location="${T1.email.error.body.template}"/>
+		<email:send doc:name="Send error mail" doc:id="67253017-3316-4ec6-abc5-532b487a38db" config-ref="Email_SMTP" toAddresses="#[[vars.emailInfo.emailTo]]" subject="#[vars.emailInfo.emailSubject]" fromAddress="#[vars.emailInfo.emailFrom]">
+			<reconnect-forever />
+			<email:body contentType="text/html">
+			</email:body>
+		</email:send>
+	</flow>
+</mule>
