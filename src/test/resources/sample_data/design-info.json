@@ -1,5 +1,8 @@
 {
   "sampleData": {
+    "ede6098b-b783-40e1-9f64-d910fbbf774d": {
+      "vars-trailingSeq": "sample_data/unknown.dwl"
+    },
     "57f04ccb-48e2-43bc-b843-db3c75a71784": {
       "payload": "sample_data/list_json.json"
     }

@@ -88,7 +88,7 @@ var val = p(vars.fileDescriptor.info.id ++ '.groupByColumn')
 						<ee:set-payload><![CDATA[%dw 2.0
 output application/java
 ---
-(payload.value map using (row = dw::core::Objects::valueSet($)) (((row - sizeOf(row) -2) + vars.trailingSeq + row[sizeOf (row) -1]) joinBy "|")) reduce ($$ ++ $ ++ "\\n")]]></ee:set-payload>
+(payload.value map using (row = dw::core::Objects::valueSet($)) (((row - sizeOf(row) -2) + vars.trailingSeq + row[sizeOf (row) -1]) joinBy "|")) map ($ ++ "\n") reduce ($$ ++ $)]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
 				<sftp:write doc:name="Write" doc:id="abccf1b3-da12-4e1a-82d5-0344fdeb974e" config-ref="SFTP_Destination" path='#[vars.fileDescriptor.info.destination.destFolder  ++ "/" ++ vars.fileName]' mode="APPEND">
@@ -167,7 +167,7 @@ output application/java
 output application/java
 import dw::core::Objects
 ---
-(payload.value map using (row = Objects::valueSet($)) row joinBy "|") reduce ($$ ++ $ ++ "\\n")]]></ee:set-payload>
+(payload.value map using (row = Objects::valueSet($)) row joinBy "|") map ($ ++ "\n") reduce ($$ ++ $)]]></ee:set-payload>
 				</ee:message>
 			</ee:transform>
 			<compression:zip doc:name="Zip" doc:id="893e2a73-e73d-4704-a18a-f192c4d3c679" />
