@@ -1,34 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Configuration>
-
-    <!--These are some of the loggers you can enable. 
-        There are several more you can find in the documentation. 
-        Besides this log4j configuration, you can also use Java VM environment variables
-        to enable other logs like network (-Djavax.net.debug=ssl or all) and 
-        Garbage Collector (-XX:+PrintGC). These will be append to the console, so you will 
-        see them in the mule_ee.log file. -->
-
+<Configuration status="INFO" name="cloudhub" packages="com.mulesoft.ch.logging.appender">
     <Appenders>
         <RollingFile name="file" fileName="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}third-parties-integration.log" 
                  filePattern="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}third-parties-integration-%i.log">
-            <PatternLayout pattern="%-5p %d [%t] %X{correlationId}%c: %m%n" />
+            <PatternLayout pattern="%d [%t] %-5p %c - %m%n" />
             <SizeBasedTriggeringPolicy size="10 MB" />
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
-    </Appenders>
-    <Loggers>
         
-        <!-- Http Logger shows wire traffic on DEBUG. -->
-        <!--AsyncLogger name="org.mule.service.http.impl.service.HttpMessageLogger" level="DEBUG" /-->
-        <AsyncLogger name="org.mule.service.http" level="WARN"/>
-        <AsyncLogger name="org.mule.extension.http" level="WARN"/>
+        <Log4J2CloudhubLogAppender name="CLOUDHUB"
+                                   addressProvider="com.mulesoft.ch.logging.DefaultAggregatorAddressProvider"
+                                   applicationContext="com.mulesoft.ch.logging.DefaultApplicationContext"
+                                   appendRetryIntervalMs="${sys:logging.appendRetryInterval}"
+                                   appendMaxAttempts="${sys:logging.appendMaxAttempts}"
+                                   batchSendIntervalMs="${sys:logging.batchSendInterval}"
+                                   batchMaxRecords="${sys:logging.batchMaxRecords}"
+                                   memBufferMaxSize="${sys:logging.memBufferMaxSize}"
+                                   journalMaxWriteBatchSize="${sys:logging.journalMaxBatchSize}"
+                                   journalMaxFileSize="${sys:logging.journalMaxFileSize}"
+                                   clientMaxPacketSize="${sys:logging.clientMaxPacketSize}"
+                                   clientConnectTimeoutMs="${sys:logging.clientConnectTimeout}"
+                                   clientSocketTimeoutMs="${sys:logging.clientSocketTimeout}"
+                                   serverAddressPollIntervalMs="${sys:logging.serverAddressPollInterval}"
+                                   serverHeartbeatSendIntervalMs="${sys:logging.serverHeartbeatSendIntervalMs}"
+                                   statisticsPrintIntervalMs="${sys:logging.statisticsPrintIntervalMs}">
+
+            <PatternLayout pattern="[%d{MM-dd HH:mm:ss}] %-5p %c{1} [%t] CUSTOM: %m%n"/>
+        </Log4J2CloudhubLogAppender>
+        
+        <Socket name="LOGSTASH" host="${sys:logstash.host}" port="${sys:logstash.port}"
+            connectTimeoutMillis="2000" reconnectionDelayMillis="10000">
+            <PatternLayout pattern="%d{ISO8601}{UTC} %p %c %m%n" />
+        </Socket>
+    </Appenders>
     
-        <!-- Mule classes -->        
+    <Loggers>
+        <!-- Areas Kibana Logger -->
+        <AsyncLogger name="com.areas" level="INFO" >
+            <AppenderRef ref="LOGSTASH" />
+        </AsyncLogger>
+        
+        <!-- CXF is used heavily by Mule for web services -->
+        <AsyncLogger name="org.apache.cxf" level="WARN"/>
+
+        <!-- Apache Commons tend to make a lot of noise which can clutter the log-->
+        <AsyncLogger name="org.apache" level="WARN"/>
+
+        <!-- Reduce startup noise -->
+        <AsyncLogger name="org.springframework.beans.factory" level="WARN"/>
+
+        <!-- Mule classes -->
         <AsyncLogger name="org.mule" level="INFO"/>
         <AsyncLogger name="com.mulesoft" level="INFO"/>
- 
+
+        <!-- Reduce DM verbosity -->
+        <AsyncLogger name="org.jetel" level="WARN"/>
+        <AsyncLogger name="Tracking" level="WARN"/>
+        
+        <!-- Cloudhub recommended Loggers -->
+        <AsyncLogger name="com.gigaspaces" level="ERROR"/>
+        <AsyncLogger name="com.j_spaces" level="ERROR"/>
+        <AsyncLogger name="com.sun.jini" level="ERROR"/>
+        <AsyncLogger name="net.jini" level="ERROR"/>
+        
         <AsyncRoot level="INFO">
             <AppenderRef ref="file" />
+            <AppenderRef ref="CLOUDHUB" />
         </AsyncRoot>
     </Loggers>
 </Configuration>

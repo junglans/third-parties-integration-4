@@ -2,6 +2,7 @@
   "configs": [
     "implementation.xml",
     "type_0_flows.xml",
+    "borral.xml",
     "config.xml",
     "type_1_flows.xml",
     "logs.xml"
