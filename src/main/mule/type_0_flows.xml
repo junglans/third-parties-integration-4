@@ -7,7 +7,7 @@ http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sft
 http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
 http://www.mulesoft.org/schema/mule/ftps http://www.mulesoft.org/schema/mule/ftps/current/mule-ftps.xsd">
 	<sub-flow name="moveFile_T0" doc:id="ad60d9c4-697a-43a0-8472-1240031578e7" >
-		<sftp:read doc:name="Get File" doc:id="c5220e65-e752-4c79-90b8-1a438fb7cd7c" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' outputEncoding="UTF-8" />
+		<sftp:read doc:name="Get File" doc:id="c5220e65-e752-4c79-90b8-1a438fb7cd7c" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]' outputEncoding="UTF-8" />
 		<flow-ref doc:name='#["writeTo_" ++ vars.fileDescriptor.info.destination.protocol]' doc:id="199b324b-a929-481e-a708-796775dbbe83" name='#["writeTo_" ++ vars.fileDescriptor.info.destination.protocol]'/>
 		<flow-ref doc:name="copyFileToProcessed_SubFlow_T0" doc:id="f6bc1862-444b-4971-a74a-7aab92f714d1" name="copyFileToProcessed_SubFlow_T0"/>
 	</sub-flow>
@@ -18,9 +18,9 @@ http://www.mulesoft.org/schema/mule/ftps http://www.mulesoft.org/schema/mule/ftp
 		<ftp:write doc:name="Write" doc:id="79f1f756-c3be-4188-840d-c217853e7756" config-ref="FTP_Destination" path='#[vars.fileDescriptor.info.destination.destFolder ++ "/" ++ vars.fileDescriptor.fileName]'/>
 	</sub-flow>
 	<sub-flow name="copyFileToProcessed_SubFlow_T0" doc:id="e129fe31-a947-443d-a9f2-ab5c066c2f6a" >
-		<sftp:move doc:name="Move to Processed" doc:id="07ec9cd8-d18a-443c-9b57-25fa7972d02f" config-ref="SFTP_Config" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' sourcePath='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.processPath]"/>
+		<sftp:move doc:name="Move to Processed" doc:id="07ec9cd8-d18a-443c-9b57-25fa7972d02f" config-ref="SFTP_Config" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' sourcePath='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.processPath]"/>
 	</sub-flow>
 	<sub-flow name="copyFileToERROR_SubFlow_T0" doc:id="143e9d08-1923-41c3-946b-8eb20e986dd8" >
-		<sftp:move doc:name="Move to Error" doc:id="912e5430-5387-48c2-9320-fd9304d8035d" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.errorPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
+		<sftp:move doc:name="Move to Error" doc:id="912e5430-5387-48c2-9320-fd9304d8035d" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.errorPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
 	</sub-flow>
 </mule>

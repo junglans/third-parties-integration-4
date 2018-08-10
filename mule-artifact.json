@@ -2,12 +2,11 @@
   "configs": [
     "implementation.xml",
     "type_0_flows.xml",
-    "borral.xml",
     "config.xml",
     "type_1_flows.xml",
     "logs.xml"
   ],
-  "secureProperties": [],
+  "secureProperties": ["tp.sftp.user","tp.sftp.pwd"],
   "redeploymentEnabled": true,
   "name": "third-parties-integration",
   "minMuleVersion": "4.1.1",

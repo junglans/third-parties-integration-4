@@ -28,7 +28,7 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 			variableName="fileNameQualifier" />
 		<sftp:read doc:name="Get File from Processing" doc:id="11c26c8e-df00-45ba-889b-09b12d099a5d"
 			config-ref="SFTP_Config"
-			path='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]'
+			path='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]'
 			outputMimeType="application/csv; ignoreemptyline=true; headerlinenumber=0; streaming=true; separator=|; header=true"
 			outputEncoding="UTF-8" />
 		<ee:transform doc:name="Group By Column Value"
@@ -135,13 +135,13 @@ output application/java
 	<sub-flow name="copyFileToProcessed_SubFlow_T1" doc:id="37f8cca3-9113-4c2a-8613-f6289a4252fc">
 		<sftp:move doc:name="Move to Processed" doc:id="826c4d06-804b-418a-b3ae-a87beea6a613"
 			config-ref="SFTP_Config"
-			sourcePath='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]'
+			sourcePath='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]'
 			targetPath="#[vars.fileDescriptor.info.processPath]"
 			renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
 	</sub-flow>
 		<sub-flow name="copyFileToERROR_SubFlow_T1" doc:id="45750d33-3bd7-45cb-ab66-5d1291a3e22a" >
 		<set-variable value='#[splitBy(vars.fileDescriptor.fileName, ".")[0] ++ ".zip"]' doc:name="zipFileName" doc:id="72bd9aeb-efc2-4e20-9a14-726a9fedb6d2" variableName="zipFileName"/>
-		<sftp:read doc:name="Read from Processing" doc:id="64556560-edf8-4775-8ac2-cdf3f6cbda4b" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]'/>
+		<sftp:read doc:name="Read from Processing" doc:id="64556560-edf8-4775-8ac2-cdf3f6cbda4b" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]'/>
 		<compression:zip doc:name="Zip" doc:id="fef9601c-8900-4b91-bcc8-a03808ef4ca1" outputMimeType="application/zip"/>
 		<ee:transform doc:name="add zipped file to failedList" doc:id="fa5145c1-3c63-47d1-a26e-634273a075dc" >
 			<ee:message >
@@ -156,7 +156,7 @@ output application/java
 			</ee:variables>
 		</ee:transform>
 		<flow-ref doc:name="send-mail-SubFlow" doc:id="e9f3f54a-dc58-4be9-bbdf-6c9971be1f1b" name="send-mail-SubFlow"/>
-		<sftp:move doc:name="Move to Error" doc:id="4fa4278a-fbe0-45a8-8345-d5707b084085" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.errorPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
+		<sftp:move doc:name="Move to Error" doc:id="4fa4278a-fbe0-45a8-8345-d5707b084085" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.errorPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
 	</sub-flow>
 	<sub-flow name="processFailedList_Sub_Flow" doc:id="4bd43f0d-e0d6-4de9-b451-fe7550a08387">
 		<foreach doc:name="For Each failed File" doc:id="4316667c-a249-4c37-b6fb-6331358ef2ff" collection="#[dw::core::Objects::entrySet(vars.failedList)]">
@@ -174,7 +174,7 @@ import dw::core::Objects
 			<set-variable value="#[vars.failedList dw::core::Objects::mergeWith {(vars.fileName): payload}]" doc:name="failedList" doc:id="bc55fc8d-a2b4-41c1-852d-01e255c74962" variableName="failedList" />
 		</foreach>
 		<flow-ref doc:name="send-mail-SubFlow" doc:id="f1ca238e-52af-44c6-b3fa-a7dba921193c" name="send-mail-SubFlow" />
-		<sftp:move doc:name="Move to Error" doc:id="c43a6c3a-4354-4b6a-9663-4a59bc59ea86" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.errorPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
+		<sftp:move doc:name="Move to Error" doc:id="c43a6c3a-4354-4b6a-9663-4a59bc59ea86" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/" ++ vars.fileDescriptor.fileName]' targetPath="#[vars.fileDescriptor.info.errorPath]" renameTo='#[now() as String {format: "yyyyMMddHHmmss"} ++"_"++ vars.fileDescriptor.fileName]' />
 	</sub-flow>
 	<flow name="send-mail-SubFlow" doc:id="c083cbed-b5df-4b95-a4fa-05a2a5afec32">
 		<ee:transform doc:name="Email Info"

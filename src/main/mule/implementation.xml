@@ -111,8 +111,7 @@ output application/java
 		</foreach>
 	</sub-flow>
 	<flow name="processFile_Flow" doc:id="56ac45cc-dff7-49bb-8783-a01840c8131a" >
-		<sftp:move doc:name="Move File to Processing" doc:id="0f612652-bc12-4f69-9d00-3d8a9f85d184" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/" ++ vars.fileDescriptor.fileName]' targetPath='#[vars.fileDescriptor.info.path ++ "/Processing/"]' overwrite="true"/>
-		<sftp:read doc:name="Get File" doc:id="ebe142e9-de42-4faf-aa8a-8643411c1f42" config-ref="SFTP_Config" path='#[vars.fileDescriptor.info.path ++ "/Processing/" ++ vars.fileDescriptor.fileName]' outputEncoding="UTF-8" outputMimeType="application/csv; ignoreemptyline=true; headerlinenumber=0; streaming=true; separator=|; header=true"/>
+		<sftp:move doc:name="Move File to Processing" doc:id="0f612652-bc12-4f69-9d00-3d8a9f85d184" config-ref="SFTP_Config" sourcePath='#[vars.fileDescriptor.info.path ++ "/" ++ vars.fileDescriptor.fileName]' targetPath='#[vars.fileDescriptor.info.path ++ "/${tp.sftp.processing.folder}/"]' overwrite="true"/>
 		<flow-ref doc:name="moveFile_Sub_Flow" doc:id="5fa3e3f1-1be2-415c-b9c2-8990005be4d2" name="moveFile_Sub_Flow"/>
 		<set-variable value="#[vars.successfulRecords + 1]" doc:name="successfulRecords++" doc:id="a3eda917-f1d5-4d37-b844-a21bfb2a131f" variableName="successfulRecords"/>
 		<error-handler >

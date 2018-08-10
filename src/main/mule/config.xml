@@ -14,7 +14,7 @@ http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/em
 	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="6118d612-1260-49ef-9022-7c156f04da85" file="third-parties-integration.properties" key="${vault.key}">
 	</secure-properties:config >
 	<configuration-properties doc:name="Configuration properties" doc:id="76fcd922-debb-4063-90c8-580548ecc6b9" file="third-parties-integration.properties" />
-	<global-property doc:name="Global Property" doc:id="0dffbce5-a7db-4db7-b48f-5e3778aa59da" name="vault.key" value="1234567890123456" />
+
 	<db:config name="middleware-config" doc:name="Database Config" doc:id="3c351348-2cc5-4e5f-9447-5f30e5f75c7e" >
 		<db:oracle-connection host="${SC.HOST}" port="${SC.PORT}" user="${secure::SC.USER}" password="${secure::SC.PASSWORD}" instance="${SC.INSTANCE}" />
 	</db:config>

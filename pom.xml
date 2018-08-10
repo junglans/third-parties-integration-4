@@ -12,12 +12,18 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
 		<app.runtime>4.1.1</app.runtime>
 		<mule.maven.plugin.version>3.1.2</mule.maven.plugin.version>
 		<java.version>1.8</java.version>
 	</properties>
-
+	
+	<scm>
+		<connection>scm:git:http://ti-git.mnemo.net/areas/third-parties-integration.git</connection>
+		<developerConnection>scm:git:http://ti-git.mnemo.net/areas/third-parties-integration.git</developerConnection>
+		<url>scm:git:http://ti-git.mnemo.net/areas/third-parties-integration.git</url>
+	  	<tag>HEAD</tag>
+  	</scm>
+  	
 	<build>
 		<plugins>
 			<plugin>
@@ -46,6 +52,35 @@
                     </sharedLibraries>
 				</configuration>
 			</plugin>
+			
+			<plugin>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.5.3</version>
+				<configuration>
+					<pushChanges>false</pushChanges>
+					<localCheckout>true</localCheckout>
+					<tagNameFormat>@{project.version}</tagNameFormat>
+					<username>${scm.git.username}</username>
+					<password>${scm.git.password}</password>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.maven.scm</groupId>
+						<artifactId>maven-scm-provider-gitexe</artifactId>
+						<version>1.9.4</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.3</version>
+				<configuration>
+					<additionalparam>-Xdoclint:none</additionalparam>
+				</configuration>
+			</plugin>
+					
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.5</version>
@@ -54,8 +89,23 @@
 					<target>${java.version}</target>
 				</configuration>
 			</plugin>
+			
 		</plugins>
 	</build>
+	
+	<distributionManagement>
+		<repository>
+			<id>ti-releases</id>
+			<name>ti-releases-local</name>
+			<url>http://ti-artifactory.mnemo.net:8081/artifactory/ti-releases-local</url>
+		</repository>
+		<snapshotRepository>
+			<uniqueVersion>false</uniqueVersion>
+			<id>ti-snapshots</id>
+			<name>ti-snapshots-local</name>
+			<url>http://ti-artifactory.mnemo.net:8081/artifactory/ti-snapshots-local</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<dependencies>
 		<dependency>
