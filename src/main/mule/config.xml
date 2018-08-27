@@ -19,7 +19,7 @@ http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/em
 		<db:oracle-connection host="${SC.HOST}" port="${SC.PORT}" user="${secure::SC.USER}" password="${secure::SC.PASSWORD}" instance="${SC.INSTANCE}" />
 	</db:config>
 	<sftp:config name="SFTP_Destination" doc:name="SFTP Config" doc:id="b0dc37a0-5f0d-4b93-8a53-d44e1e5f6a92" >
-		<sftp:connection host="#[vars.fileDescriptor.info.destination.host]" port="#[vars.fileDescriptor.info.destination.port]" username="#[vars.fileDescriptor.info.destination.user]" password="#[vars.fileDescriptor.info.destination.pwd]"/>
+		<sftp:connection  host="#[vars.fileDescriptor.info.destination.host]" port="#[vars.fileDescriptor.info.destination.port]" username="#[vars.fileDescriptor.info.destination.user]" password="#[vars.fileDescriptor.info.destination.pwd]" />
 	</sftp:config>
 	<ftp:config name="FTP_Destination" doc:name="FTP Config" doc:id="363d9eeb-26e3-43e9-a79d-028a2552e465" >
 		<ftp:connection transferMode="ASCII" host="#[vars.fileDescriptor.info.destination.host]" port="#[vars.fileDescriptor.info.destination.port]" username="#[vars.fileDescriptor.info.destination.user]" password="#[vars.fileDescriptor.info.destination.pwd]" />

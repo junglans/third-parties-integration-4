@@ -70,6 +70,7 @@ public class MySftp {
 			//Accept the key without confirmation
 			Properties prop = new Properties();
 			prop.put("StrictHostKeyChecking", "no");
+			prop.put("PreferredAuthentications", "publickey,keyboard-interactive,password");
 			session.setConfig(prop);
 			session.connect();
 			// Open channel and connect

@@ -5,11 +5,16 @@
 	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
-	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="795bed5d-4768-4032-b266-372ec5e49930" >
-		<sftp:connection host="${tp.sftp.host}" port="${tp.sftp.port}" username="${secure::tp.sftp.user}" password="${secure::tp.sftp.pwd}" >
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config"  doc:id="795bed5d-4768-4032-b266-372ec5e49930"  >
+		<sftp:connection host="${tp.sftp.host}" port="${tp.sftp.port}" username="${secure::tp.sftp.user}" password="${secure::tp.sftp.pwd}">
 			<reconnection >
 				<reconnect-forever />
 			</reconnection>
+			<sftp:preferred-authentication-methods >
+				<sftp:preferred-authentication-method value="PUBLIC_KEY" />
+				<sftp:preferred-authentication-method value="PASSWORD" />
+				<sftp:preferred-authentication-method value="KEYBOARD_INTERACTIVE" />
+			</sftp:preferred-authentication-methods>
 		</sftp:connection>
 	</sftp:config>
 	<flow name="implementationFlow" doc:id="8ed4feff-351a-4970-ad32-9d9ce76fbca8" >

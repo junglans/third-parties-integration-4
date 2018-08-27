@@ -6,7 +6,7 @@
     "type_1_flows.xml",
     "logs.xml"
   ],
-  "secureProperties": ["tp.sftp.user","tp.sftp.pwd"],
+  "secureProperties": [],
   "redeploymentEnabled": true,
   "name": "third-parties-integration",
   "minMuleVersion": "4.1.1",
